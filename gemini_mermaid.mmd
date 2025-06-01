@@ -1,0 +1,260 @@
+erDiagram
+    users {
+        int id PK
+        string email
+        string password_hash
+        string first_name
+        string last_name
+        date date_of_birth
+        string fid_id
+        string profile_picture_url
+        int official_elo
+        int open_elo
+        bool is_verified_identity
+        datetime created_at
+        datetime updated_at
+    }
+
+    sessions {
+        string id PK
+        int user_id FK
+        datetime expires_at
+        string ip_address
+        string user_agent
+        datetime created_at
+    }
+
+    roles {
+        int id PK
+        string name
+        string description
+    }
+
+    user_roles {
+        int user_id FK
+        int role_id FK
+    }
+
+    organizations {
+        int id PK
+        string name
+        string type
+        int parent_organization_id FK
+        string country_code
+        string region_or_state
+        string city
+        string address
+        string contact_email
+        string contact_phone
+        string website_url
+        string logo_url
+        date founded_date
+        string description_org
+        bool is_officially_verified
+        int verified_by_organization_id FK
+        int verified_by_user_id FK
+        datetime verification_date
+        string verification_document_url
+        string social_media_link_for_verification
+        datetime created_at_org
+        datetime updated_at_org
+    }
+
+    organization_verification_requests {
+        int id PK
+        int requesting_organization_id FK
+        int approving_organization_id FK
+        string status
+        int submitted_by_user_id FK
+        int reviewed_by_user_id FK
+        string submission_notes
+        string review_notes
+        datetime submitted_at
+        datetime reviewed_at
+    }
+
+    organization_staff {
+        int user_id FK
+        int organization_id FK
+        string role_in_organization
+        bool is_primary_contact
+        bool can_manage_licenses
+        bool can_manage_tournaments
+        bool can_approve_children
+        datetime added_at
+    }
+
+    license_types {
+        int id PK
+        string name
+        string description_lt
+        decimal price_monthly
+        decimal price_annual
+        string features
+        int max_concurrent_sessions
+        bool is_available
+    }
+
+    licenses {
+        int id PK
+        int license_type_id FK
+        int user_id FK
+        int organization_id FK
+        datetime start_date
+        datetime end_date
+        string payment_interval
+        string status_lic
+        bool auto_renew
+        string transaction_id
+        datetime created_at_lic
+        datetime updated_at_lic
+    }
+
+    elo_history {
+        int id PK
+        int user_id FK
+        int game_id FK
+        int previous_official_elo
+        int new_official_elo
+        int previous_open_elo
+        int new_open_elo
+        datetime change_date
+        string reason
+    }
+
+    tournaments {
+        int id PK
+        string name
+        int organizer_organization_id FK
+        int organizer_user_id FK
+        string modality
+        datetime start_datetime
+        datetime end_datetime
+        string location_venue_name
+        string location_address
+        string location_city
+        string location_country_code
+        bool is_official
+        string status_tnmt
+        int max_participants
+        datetime registration_deadline
+        decimal entry_fee
+        string rules_details
+        string prize_details
+        string banner_image_url
+        int created_by_user_id FK
+        datetime created_at_tnmt
+        datetime updated_at_tnmt
+    }
+
+    tournament_participants {
+        int id PK
+        int tournament_id FK
+        int user_id FK
+        datetime registration_datetime
+        int initial_rating_official
+        int initial_rating_open
+        int final_ranking_position
+        decimal points_achieved
+        decimal tie_break_score1
+        decimal tie_break_score2
+        bool is_confirmed
+        string payment_status
+    }
+
+    tournament_arbiters {
+        int tournament_id FK
+        int user_id FK
+        string role_in_tournament
+    }
+
+    tournament_rounds {
+        int id PK
+        int tournament_id FK
+        int round_number
+        datetime start_datetime_rnd
+        bool is_completed
+        datetime pairing_generated_at
+    }
+
+    game_results {
+        int id PK
+        int tournament_id FK
+        int round_id FK
+        int player_white_id FK
+        int player_black_id FK
+        string result
+        string pgn_moves
+        datetime game_datetime
+        int board_number
+        int reported_by_user_id FK
+        int verified_by_arbiter_id FK
+        datetime report_datetime
+        datetime verification_datetime
+        int elo_change_white_official
+        int elo_change_black_official
+        int elo_change_white_open
+        int elo_change_black_open
+        bool affects_official_elo
+        bool affects_open_elo
+        datetime created_at_gr
+        datetime updated_at_gr
+    }
+
+    published_rankings {
+        int id PK
+        string name
+        string category
+        int organization_id FK
+        date effective_date
+        int published_by_user_id FK
+        datetime publication_datetime
+        string description_pr
+        bool is_active
+        datetime created_at_pr
+    }
+
+    ranking_entries {
+        int id PK
+        int published_ranking_id FK
+        int user_id FK
+        int rank_position
+        int elo_at_publication
+        int games_played_in_period
+    }
+
+    users ||--o{ sessions : ""
+    users ||--o{ user_roles : ""
+    roles ||--o{ user_roles : ""
+    organizations }o--o| organizations : ""
+    organizations }o--o| organizations : ""
+    users  o|--o{ organizations : ""
+    organizations ||--o{ organization_verification_requests : ""
+    organizations  o|--o{ organization_verification_requests : ""
+    users ||--o{ organization_verification_requests : ""
+    users  o|--o{ organization_verification_requests : ""
+    users ||--o{ organization_staff : ""
+    organizations ||--o{ organization_staff : ""
+    license_types ||--o{ licenses : ""
+    users  o|--o{ licenses : ""
+    organizations  o|--o{ licenses : ""
+    users ||--o{ elo_history : ""
+    game_results  o|--o{ elo_history : ""
+    organizations  o|--o{ tournaments : ""
+    users  o|--o{ tournaments : ""
+    users ||--o{ tournaments : ""
+    tournaments ||--o{ tournament_participants : ""
+    users ||--o{ tournament_participants : ""
+    tournaments ||--o{ tournament_arbiters : ""
+    users ||--o{ tournament_arbiters : ""
+    tournaments ||--o{ tournament_rounds : ""
+    tournaments ||--o{ game_results : ""
+    tournament_rounds  o|--o{ game_results : ""
+    users  o|--o{ game_results : ""
+    users  o|--o{ game_results : ""
+    users  o|--o{ game_results : ""
+    users  o|--o{ game_results : ""
+    organizations  o|--o{ published_rankings : ""
+    users ||--o{ published_rankings : ""
+    published_rankings ||--o{ ranking_entries : ""
+    users ||--o{ ranking_entries : ""

@@ -1,0 +1,214 @@
+erDiagram
+    user {
+        UUID id PK
+        VARCHAR email
+        VARCHAR verification_status
+        VARCHAR verification_document_url
+        VARCHAR verification_social_url
+        TIMESTAMP last_login
+        VARCHAR license_type
+        TIMESTAMP license_expires_at
+        VARCHAR current_session_id
+    }
+
+    user_profile {
+        UUID user_id PK,FK
+        VARCHAR first_name
+        VARCHAR last_name
+        DATE birth_date
+        VARCHAR country_code
+        INT elo_rating
+        INT open_elo_rating
+        VARCHAR profile_picture_url
+        TEXT bio
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    organization {
+        UUID id PK
+        UUID parent_organization_id FK
+        VARCHAR name
+        TEXT description
+        VARCHAR organization_type
+        VARCHAR country_code
+        VARCHAR region
+        VARCHAR verification_status
+        VARCHAR logo_url
+        VARCHAR website_url
+        VARCHAR contact_email
+        UUID created_by FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    organization_member {
+        UUID user_id PK,FK
+        UUID organization_id PK,FK
+        VARCHAR role
+        BOOLEAN is_primary
+        TIMESTAMP joined_at
+    }
+
+    tournament {
+        UUID id PK
+        UUID organization_id FK
+        VARCHAR name
+        TEXT description
+        VARCHAR tournament_type
+        TIMESTAMP start_date
+        TIMESTAMP end_date
+        VARCHAR location
+        BOOLEAN is_official
+        VARCHAR status
+        JSONB ruleset
+        UUID created_by FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    tournament_participant {
+        UUID tournament_id PK,FK
+        UUID user_id PK,FK
+        UUID partner_user_id FK
+        VARCHAR team_name
+        INT initial_rating
+        INT final_position
+        TIMESTAMP created_at
+    }
+
+    tournament_match {
+        UUID id PK
+        UUID tournament_id FK
+        INT round_number
+        INT table_number
+        TIMESTAMP start_time
+        TIMESTAMP end_time
+        VARCHAR status
+        UUID referee_id FK
+        TIMESTAMP created_at
+    }
+
+    match_result {
+        UUID match_id PK,FK
+        UUID participant1_user_id FK
+        UUID participant2_user_id FK
+        INT participant1_score
+        INT participant2_score
+        UUID winner_user_id FK
+        BOOLEAN is_draw
+        UUID reported_by FK
+        UUID verified_by FK
+        VARCHAR verification_status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    elo_history {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR rating_type
+        INT old_rating
+        INT new_rating
+        INT change
+        UUID match_id FK
+        UUID tournament_id FK
+        VARCHAR change_reason
+        UUID changed_by FK
+        TIMESTAMP created_at
+    }
+
+    license_subscription {
+        UUID id PK
+        UUID user_id FK
+        UUID organization_id FK
+        VARCHAR license_type
+        VARCHAR payment_plan
+        TIMESTAMP start_date
+        TIMESTAMP end_date
+        BOOLEAN is_active
+        DECIMAL payment_amount
+        VARCHAR payment_currency
+        VARCHAR payment_receipt_url
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    active_session {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR session_token
+        VARCHAR ip_address
+        TEXT user_agent
+        TIMESTAMP created_at
+        TIMESTAMP expires_at
+    }
+
+    license_feature {
+        VARCHAR license_type PK
+        INT max_organizations
+        INT max_tournaments
+        INT max_participants
+        TEXT[] available_game_types
+        BOOLEAN has_detailed_stats
+        BOOLEAN allow_multiple_sessions
+        BOOLEAN can_create_official_tournaments
+        BOOLEAN can_verify_players
+    }
+
+    notification {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR title
+        TEXT message
+        BOOLEAN is_read
+        VARCHAR notification_type
+        VARCHAR related_entity_type
+        UUID related_entity_id
+        TIMESTAMP created_at
+    }
+
+    verification_request {
+        UUID id PK
+        UUID user_id FK
+        UUID organization_id FK
+        VARCHAR request_type
+        VARCHAR status
+        VARCHAR document_url
+        VARCHAR social_verification_url
+        UUID reviewed_by FK
+        TEXT review_notes
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    user ||--o{ user_profile : "1:1"
+    user ||--o{ organization_member : "1:N"
+    user ||--o{ tournament_participant : "1:N"
+    user ||--o{ tournament : "created_by"
+    user ||--o{ tournament_match : "referee"
+    user ||--o{ match_result : "participant1"
+    user ||--o{ match_result : "participant2"
+    user ||--o{ match_result : "winner"
+    user ||--o{ match_result : "reported_by"
+    user ||--o{ match_result : "verified_by"
+    user ||--o{ elo_history : "1:N"
+    user ||--o{ license_subscription : "1:N"
+    user ||--o{ active_session : "1:N"
+    user ||--o{ notification : "1:N"
+    user ||--o{ verification_request : "1:N"
+    
+    organization ||--o{ organization : "parent_organization"
+    organization ||--o{ organization_member : "1:N"
+    organization ||--o{ tournament : "1:N"
+    organization ||--o{ license_subscription : "1:N"
+    organization ||--o{ verification_request : "1:N"
+    
+    tournament ||--o{ tournament_participant : "1:N"
+    tournament ||--o{ tournament_match : "1:N"
+    tournament ||--o{ elo_history : "1:N"
+    
+    tournament_match ||--|| match_result : "1:1"
+    tournament_match ||--o{ elo_history : "1:N"
+    
+    license_feature ||--o{ license_subscription : "license_type"

@@ -1,0 +1,149 @@
+erDiagram  
+    federaciones {  
+        int id PK  
+        text nombre  
+        text pais  
+        text estado  
+        boolean aprobado  
+        timestamptz fecha_registro  
+        boolean verificado  
+        jsonb social_verification  
+        jsonb documentos_verificacion  
+    }  
+  
+    asociaciones {  
+        int id PK  
+        int federacion_id FK  
+        text nombre  
+        text pais  
+        text estado  
+        boolean aprobado  
+        timestamptz fecha_registro  
+        boolean verificado  
+        jsonb social_verification  
+        jsonb documentos_verificacion  
+    }  
+  
+    clubes {  
+        int id PK  
+        int asociacion_id FK  
+        text nombre  
+        text pais  
+        text estado  
+        boolean aprobado  
+        boolean verificado  
+        timestamptz fecha_registro  
+        jsonb social_verification  
+        jsonb documentos_verificacion  
+    }  
+  
+    moderadores {  
+        int id PK  
+        int federacion_id FK  
+        int asociacion_id FK  
+        int club_id FK  
+        text nombre  
+        text email  
+        boolean verificado  
+        jsonb social_verification  
+        jsonb documentos_verificacion  
+        timestamptz fecha_registro  
+    }  
+  
+    usuarios {  
+        int id PK  
+        text nombre  
+        text email  
+        text password_hash  
+        text rol  
+        text tipo_licencia  
+        boolean estado_sesion  
+        text ip_registro  
+        text navegador  
+        timestamptz fecha_registro  
+        boolean verificado  
+        text afiliacion_tipo  
+        int afiliacion_id  
+        boolean licencia_activa  
+    }  
+  
+    licencias {  
+        int id PK  
+        int usuario_id FK  
+        text tipo  
+        text modalidad  
+        timestamptz fecha_inicio  
+        timestamptz fecha_fin  
+        boolean pago_mensual  
+        text estado  
+        decimal costo  
+    }  
+  
+    sesiones {  
+        int id PK  
+        int usuario_id FK  
+        text ip  
+        text navegador  
+        timestamptz fecha_inicio  
+        timestamptz fecha_cierre  
+        boolean sesion_activa  
+    }  
+  
+    rankings {  
+        int id PK  
+        text nombre  
+        text tipo  
+        text categoria  
+        timestamptz fecha_creacion  
+        text descripcion  
+    }  
+  
+    resultados {  
+        int id PK  
+        int torneo_id FK  
+        int jugador_id FK  
+        text resultado  
+        timestamptz fecha  
+    }  
+  
+    torneos {  
+        int id PK  
+        text nombre  
+        text modalidad  
+        timestamptz fecha_inicio  
+        timestamptz fecha_fin  
+        text sistema  
+        int ranking_id FK  
+        text estado  
+    }  
+  
+    ventas_licencias {  
+        int id PK  
+        int licencia_id FK  
+        int comprador_id FK  
+        timestamptz fecha_compra  
+        decimal monto  
+        text periodo  
+    }  
+  
+    pagos {  
+        int id PK  
+        int usuario_id FK  
+        decimal monto  
+        timestamptz fecha_pago  
+        text metodo_pago  
+        text estado  
+    }  
+  
+    %% Relaciones  
+    federaciones ||--o{ asociaciones : "tiene"  
+    asociaciones ||--o{ clubes : "tiene"  
+    federaciones ||--o{ moderadores : "tiene"  
+    asociaciones ||--o{ moderadores : "tiene"  
+    clubes ||--o{ moderadores : "tiene"  
+    usuarios ||--o{ licencias : "tiene"  
+    usuarios ||--o{ sesiones : "tiene"  
+    rankings ||--o{ torneos : "tiene"  
+    torneos ||--o{ resultados : "tiene"  
+    usuarios ||--o{ ventas_licencias : "compra"  
+    usuarios ||--o{ pagos : "realiza"  

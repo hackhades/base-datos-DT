@@ -1,0 +1,176 @@
+erDiagram
+    country {
+        int id PK
+        varchar name
+        char iso_code
+    }
+    federation {
+        int id PK
+        varchar name
+        int country_id FK
+        boolean is_verified
+        int verified_by FK
+        timestamp created_at
+        timestamp verified_at
+    }
+    association {
+        int id PK
+        varchar name
+        int federation_id FK
+        varchar state
+        boolean is_verified
+        int verified_by FK
+        timestamp created_at
+        timestamp verified_at
+    }
+    club {
+        int id PK
+        varchar name
+        int association_id FK
+        boolean is_verified
+        int verified_by FK
+        timestamp created_at
+        timestamp verified_at
+    }
+    user_role {
+        int id PK
+        varchar name
+    }
+    user_account {
+        int id PK
+        int role_id FK
+        int federation_id FK
+        int association_id FK
+        int club_id FK
+        boolean is_verified
+        int verified_by FK
+        text document_url
+        text social_profile_url
+    }
+    license_type {
+        int id PK
+        varchar name
+        text description
+        boolean allows_multiple_sessions
+        numeric price_monthly
+        numeric price_yearly
+    }
+    license {
+        int id PK
+        int license_type_id FK
+        int user_id FK
+        varchar org_type
+        int org_id
+        date start_date
+        date end_date
+        boolean is_active
+        boolean auto_renew
+    }
+    user_session {
+        int id PK
+        int user_id FK
+        varchar session_token
+        varchar ip_address
+        text user_agent
+        timestamp created_at
+        timestamp closed_at
+    }
+    referee {
+        int id PK
+        int user_id FK
+        int certified_by FK
+        text certification_document
+        boolean is_verified
+        timestamp verified_at
+    }
+    player {
+        int id PK
+        int user_id FK
+        int federation_id FK
+        int association_id FK
+        int club_id FK
+        numeric elo_rating
+    }
+    tournament {
+        int id PK
+        varchar name
+        text description
+        varchar organizer_type
+        int organizer_id
+        date start_date
+        date end_date
+        varchar system
+        boolean is_official
+        int created_by FK
+    }
+    match {
+        int id PK
+        int tournament_id FK
+        int round
+        int player1_id FK
+        int player2_id FK
+        varchar result
+        timestamp played_at
+    }
+    ranking {
+        int id PK
+        int player_id FK
+        numeric elo
+        date date
+        boolean is_official
+    }
+    ranking_publication {
+        int id PK
+        int ranking_id FK
+        int published_by FK
+        timestamp published_at
+        boolean is_official
+    }
+    license_payment {
+        int id PK
+        int license_id FK
+        timestamp payment_date
+        numeric amount
+        varchar payment_method
+        boolean is_annual
+        numeric discount_applied
+    }
+    admin_action_log {
+        int id PK
+        int user_id FK
+        varchar action
+        varchar target_type
+        int target_id
+        timestamp timestamp
+        text details
+    }
+
+    federation ||--o{ country : "country_id"
+    association ||--o{ federation : "federation_id"
+    club ||--o{ association : "association_id"
+    user_account }o--|| user_role : "role_id"
+    user_account }o--o| federation : "federation_id"
+    user_account }o--o| association : "association_id"
+    user_account }o--o| club : "club_id"
+    user_account }o--|| user_account : "verified_by"
+    federation }o--|| user_account : "verified_by"
+    association }o--|| user_account : "verified_by"
+    club }o--|| user_account : "verified_by"
+    license }o--|| license_type : "license_type_id"
+    license }o--|| user_account : "user_id"
+    user_session }o--|| user_account : "user_id"
+    referee }o--|| user_account : "user_id"
+    referee }o--|| user_account : "certified_by"
+    player }o--|| user_account : "user_id"
+    player }o--o| federation : "federation_id"
+    player }o--o| association : "association_id"
+    player }o--o| club : "club_id"
+    tournament }o--|| user_account : "created_by"
+    match }o--|| tournament : "tournament_id"
+    match }o--|| player : "player1_id"
+    match }o--|| player : "player2_id"
+    ranking }o--|| player : "player_id"
+    ranking_publication }o--|| ranking : "ranking_id"
+    ranking_publication }o--|| user_account : "published_by"
+    license_payment }o--|| license : "license_id"
+    admin_action_log }o--|| user_account : "user_id"
