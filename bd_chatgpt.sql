@@ -1,4 +1,10 @@
--- Tabla para registrar las federaciones internacionales  
+-- Tabla para las modalidades de juego  
+CREATE TABLE modalidades (  
+    id SERIAL PRIMARY KEY,  
+    nombre TEXT NOT NULL UNIQUE  
+);  
+  
+-- Tabla para las federaciones  
 CREATE TABLE federaciones (  
     id SERIAL PRIMARY KEY,  
     nombre TEXT NOT NULL,  
@@ -11,7 +17,7 @@ CREATE TABLE federaciones (
     documentos_verificacion JSONB  
 );  
   
--- Tabla para registrar las asociaciones nacionales o regionales  
+-- Tabla para las asociaciones  
 CREATE TABLE asociaciones (  
     id SERIAL PRIMARY KEY,  
     federacion_id INT8 REFERENCES federaciones(id),  
@@ -25,7 +31,7 @@ CREATE TABLE asociaciones (
     documentos_verificacion JSONB  
 );  
   
--- Tabla para registrar clubes  
+-- Tabla para los clubes  
 CREATE TABLE clubes (  
     id SERIAL PRIMARY KEY,  
     asociacion_id INT8 REFERENCES asociaciones(id),  
@@ -39,27 +45,13 @@ CREATE TABLE clubes (
     documentos_verificacion JSONB  
 );  
   
--- Tabla para registrar moderadores autorizados  
-CREATE TABLE moderadores (  
-    id SERIAL PRIMARY KEY,  
-    federacion_id INT8 REFERENCES federaciones(id),  
-    asociacion_id INT8 REFERENCES asociaciones(id),  
-    club_id INT8 REFERENCES clubes(id),  
-    nombre TEXT NOT NULL,  
-    email TEXT UNIQUE NOT NULL,  
-    verificado BOOLEAN DEFAULT FALSE,  
-    social_verification JSONB,  
-    documentos_verificacion JSONB,  
-    fecha_registro TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  
-);  
-  
--- Tabla para registrar usuarios (jugadores, árbitros, aficionados)  
+-- Tabla para los usuarios  
 CREATE TABLE usuarios (  
     id SERIAL PRIMARY KEY,  
     nombre TEXT NOT NULL,  
     email TEXT UNIQUE NOT NULL,  
     password_hash TEXT NOT NULL,  
-    rol TEXT NOT NULL, -- 'jugador', 'arbitro', 'aficionado'  
+    rol TEXT NOT NULL, -- 'jugador', 'arbitro', 'administrador', 'aficionado'  
     tipo_licencia TEXT, -- 'basica', 'premium'  
     estado_sesion BOOLEAN DEFAULT FALSE,  
     ip_registro TEXT,  
@@ -71,77 +63,92 @@ CREATE TABLE usuarios (
     licencia_activa BOOLEAN DEFAULT FALSE  
 );  
   
--- Tabla para registrar licencias  
+-- Tabla para las licencias  
 CREATE TABLE licencias (  
     id SERIAL PRIMARY KEY,  
     usuario_id INT8 REFERENCES usuarios(id),  
     tipo TEXT, -- 'basica', 'premium'  
-    modalidad TEXT,  
     fecha_inicio TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
+    fecha_vencimiento TIMESTAMPTZ,  
+    cantidad_torneos_organizados INT DEFAULT 0,  
+    permisos JSONB  
+);  
+  
+-- Tabla para los torneos  
+CREATE TABLE torneos (  
+    id SERIAL PRIMARY KEY,  
+    nombre TEXT NOT NULL,  
+    organizador_id INT8 REFERENCES usuarios(id),  
+    modalidad_id INT8 REFERENCES modalidades(id),  
+    numero_rondas INT CHECK (numero_rondas BETWEEN 5 AND 12),  
+    fecha_inicio TIMESTAMPTZ,  
     fecha_fin TIMESTAMPTZ,  
-    pago_mensual BOOLEAN DEFAULT TRUE,  
-    estado TEXT DEFAULT 'activa', -- 'activa', 'caducada', 'cancelada'  
-    costo DECIMAL(10,2)  
+    descripcion TEXT,  
+    estado TEXT DEFAULT 'programado' -- 'programado', 'en curso', 'finalizado'  
 );  
   
--- Tabla para registrar sesiones abiertas  
-CREATE TABLE sesiones (  
-    id SERIAL PRIMARY KEY,  
-    usuario_id INT8 REFERENCES usuarios(id),  
-    ip TEXT,  
-    navegador TEXT,  
-    fecha_inicio TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
-    fecha_cierre TIMESTAMPTZ,  
-    sesion_activa BOOLEAN DEFAULT TRUE  
-);  
-  
--- Tabla para registrar rankings oficiales y abiertos  
-CREATE TABLE rankings (  
-    id SERIAL PRIMARY KEY,  
-    nombre TEXT,  
-    tipo TEXT, -- 'oficial', 'abierto'  
-    categoria TEXT,  
-    fecha_creacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
-    descripcion TEXT  
-);  
-  
--- Tabla para registrar resultados de torneos  
-CREATE TABLE resultados (  
+-- Tabla para las rondas de los torneos  
+CREATE TABLE rondas (  
     id SERIAL PRIMARY KEY,  
     torneo_id INT8 REFERENCES torneos(id),  
-    jugador_id INT8 REFERENCES usuarios(id),  
-    resultado TEXT,  
+    numero_ronda INT NOT NULL,  
+    tipo_ciclo TEXT, -- '200 puntos', '100 puntos', 'ciclo'  
+    cantidad_puntos INT CHECK (cantidad_puntos IN (100, 200)),  
     fecha TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  
 );  
   
--- Tabla para registrar torneos  
-CREATE TABLE torneos (  
+-- Tabla para las partidas  
+CREATE TABLE partidas (  
     id SERIAL PRIMARY KEY,  
-    nombre TEXT,  
-    modalidad TEXT,  
-    fecha_inicio TIMESTAMPTZ,  
-    fecha_fin TIMESTAMPTZ,  
-    sistema TEXT, -- 'suizo', etc.  
-    ranking_id INT8 REFERENCES rankings(id),  
-    estado TEXT DEFAULT 'programado'  
+    ronda_id INT8 REFERENCES rondas(id),  
+    pareja1_id INT8 REFERENCES usuarios(id),  
+    pareja2_id INT8 REFERENCES usuarios(id),  
+    puntos_favor INT,  
+    puntos_contra INT,  
+    resultado TEXT, -- 'ganado', 'perdido', 'empatado'  
+    fecha TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  
 );  
   
--- Tabla para registrar licencias de venta  
-CREATE TABLE ventas_licencias (  
+-- Tabla para la clasificación de los torneos  
+CREATE TABLE clasificacion (  
     id SERIAL PRIMARY KEY,  
-    licencia_id INT8 REFERENCES licencias(id),  
-    comprador_id INT8 REFERENCES usuarios(id),  
-    fecha_compra TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
-    monto DECIMAL(10,2),  
-    periodo TEXT -- 'mensual', 'anual'  
+    torneo_id INT8 REFERENCES torneos(id),  
+    jugador_id INT8 REFERENCES usuarios(id),  
+    posicion INT,  
+    puntos INT,  
+    estadisticas JSONB -- Para almacenar los índices estadísticos  
 );  
   
--- Tabla para registrar pagos  
-CREATE TABLE pagos (  
+-- Tabla para la clasificación universal  
+CREATE TABLE clasificacion_universal (  
     id SERIAL PRIMARY KEY,  
-    usuario_id INT8 REFERENCES usuarios(id),  
-    monto DECIMAL(10,2),  
-    fecha_pago TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
-    metodo_pago TEXT,  
-    estado TEXT -- 'completado', 'pendiente', 'fallido'  
+    jugador_id INT8 REFERENCES usuarios(id),  
+    elo DECIMAL(10, 2),  
+    region TEXT,  
+    pais TEXT,  
+    fecha_actualizacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP  
+);  
+  
+-- Tabla para los avales de torneos  
+CREATE TABLE avales (  
+    id SERIAL PRIMARY KEY,  
+    torneo_id INT8 REFERENCES torneos(id),  
+    instancia_superior_id INT8 REFERENCES federaciones(id), -- Puede ser una federación o asociación  
+    estado TEXT, -- 'pendiente', 'aprobado', 'rechazado'  
+    fecha_solicitud TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,  
+    fecha_aprobacion TIMESTAMPTZ  
+);  
+  
+-- Tabla para los eventos públicos  
+CREATE TABLE eventos (  
+    id SERIAL PRIMARY KEY,  
+    organizador_id INT8 REFERENCES usuarios(id),  
+    nombre TEXT NOT NULL,  
+    descripcion TEXT,  
+    fecha TIMESTAMPTZ,  
+    hora TIME,  
+    costo DECIMAL(10, 2),  
+    premio DECIMAL(10, 2),  
+    ubicacion TEXT,  
+    tipo TEXT -- 'torneo', 'evento social', etc.  
 );  

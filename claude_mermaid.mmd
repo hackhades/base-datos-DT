@@ -1,5 +1,4 @@
 erDiagram
-    %% =================== USUARIOS Y AUTENTICACIÓN ===================
     users {
         int id PK
         string email UK
@@ -10,17 +9,26 @@ erDiagram
         string country
         string city
         date birth_date
+        string profile_image
         boolean is_active
+        boolean email_verified
         timestamp created_at
+        timestamp updated_at
     }
 
     license_types {
         int id PK
         string name
+        string description
         decimal monthly_price
         decimal annual_price
-        int max_sessions
-        jsonb features
+        int max_simultaneous_sessions
+        int max_concurrent_tournaments
+        boolean can_publish_events
+        boolean can_request_endorsements
+        json features
+        boolean is_active
+        timestamp created_at
     }
 
     user_licenses {
@@ -31,6 +39,8 @@ erDiagram
         timestamp start_date
         timestamp end_date
         boolean is_active
+        boolean auto_renew
+        timestamp created_at
     }
 
     active_sessions {
@@ -38,33 +48,52 @@ erDiagram
         int user_id FK
         string session_token UK
         inet ip_address
+        string user_agent
+        timestamp created_at
         timestamp last_activity
         boolean is_active
     }
 
-    %% =================== ORGANIZACIONES ===================
     organization_types {
         int id PK
         string name
+        string description
         int hierarchy_level
+        int can_endorse_level
+        timestamp created_at
     }
 
     organizations {
         int id PK
         string name
+        string short_name
         int organization_type_id FK
         int parent_organization_id FK
         string country
+        string state_province
+        string city
+        string address
+        string phone
         string email
+        string website
+        string logo_url
+        string description
+        string verification_document
+        json social_media_links
         boolean is_verified
+        boolean is_active
         timestamp verification_date
         int verified_by FK
+        timestamp created_at
+        timestamp updated_at
     }
 
     user_roles {
         int id PK
         string name
-        jsonb permissions
+        string description
+        json permissions
+        timestamp created_at
     }
 
     user_organization_roles {
@@ -73,22 +102,41 @@ erDiagram
         int organization_id FK
         int role_id FK
         boolean is_verified
+        string verification_document
         int verified_by FK
+        timestamp verification_date
+        boolean is_active
+        timestamp created_at
+        %% UK(user_id, organization_id, role_id)
     }
 
-    %% =================== JUGADORES Y ÁRBITROS ===================
     players {
         int id PK
         int user_id FK
         string player_number
-        int elo_rating_official
-        int elo_rating_open
-        int games_played_official
-        int games_played_open
-        int wins_official
-        int wins_open
+        int elo_rating_universal
+        int elo_rating_national
+        int elo_rating_regional
+        int elo_rating_local
+        int games_played_universal
+        int games_played_national
+        int games_played_regional
+        int games_played_local
+        int best_rating_universal
+        int best_rating_national
+        int best_rating_regional
+        int best_rating_local
+        int total_tournaments_played
+        int total_wins
+        int total_losses
+        int current_streak
+        int longest_streak
         int preferred_partner FK
-        jsonb achievements
+        boolean is_seeking_partner
+        string playing_style
+        json achievements
+        timestamp created_at
+        timestamp updated_at
     }
 
     referees {
@@ -97,47 +145,116 @@ erDiagram
         string referee_number
         string certification_level
         date certification_date
+        date certification_expires
         int certifying_organization_id FK
-        jsonb languages
+        json languages
+        json specializations
         int tournaments_officiated
+        decimal rating
         boolean is_active
+        string notes
+        timestamp created_at
+        timestamp updated_at
     }
 
-    %% =================== TORNEOS Y PARTIDAS ===================
     game_modes {
         int id PK
         string name
+        string display_name
+        string description
         int min_players
         int max_players
         boolean is_team_mode
+        string pairing_algorithm
+        string rounds_calculation
+        json scoring_system
+        json rules
         string license_required
-        jsonb rules
+        boolean is_active
+        timestamp created_at
+    }
+
+    scoring_systems {
+        int id PK
+        string name
+        string display_name
+        string description
+        int target_points
+        int cycles_per_round
+        int hands_per_cycle
+        boolean is_active
+        timestamp created_at
+    }
+
+    statistical_indices {
+        int id PK
+        string name
+        string display_name
+        string description
+        string formula
+        int calculation_order
+        string data_type
+        int decimal_places
+        boolean is_active
+        timestamp created_at
     }
 
     tournaments {
         int id PK
         string name
+        string description
         int organizing_entity_id FK
         int organized_by FK
         int game_mode_id FK
+        int scoring_system_id FK
         string tournament_type
-        string status
+        string ranking_level
+        boolean endorsement_requested
+        string endorsement_level
+        int endorsing_organization_id FK
+        string endorsement_status
+        timestamp endorsement_date
+        int endorsed_by FK
+        string endorsement_notes
+        int total_rounds
+        int current_round
+        timestamp registration_start
+        timestamp registration_end
         timestamp start_date
         timestamp end_date
+        string venue_name
+        string venue_address
+        string city
+        string country
         int max_participants
+        int min_participants
         decimal entry_fee
+        decimal prize_pool
+        json prize_distribution
+        json registration_requirements
+        json rules
+        json contact_info
+        string poster_url
+        string live_streaming_url
         boolean is_rated
+        boolean is_public_event
+        string status
+        timestamp created_at
+        timestamp updated_at
     }
 
     tournament_registrations {
         int id PK
         int tournament_id FK
-        int player1_id FK
-        int player2_id FK
-        string team_name
+        int player_id FK
+        timestamp registration_date
         string status
         string payment_status
+        timestamp payment_date
+        string payment_reference
+        string notes
         int seeding_number
+        %% UK(tournament_id, player_id)
     }
 
     tournament_rounds {
@@ -146,47 +263,109 @@ erDiagram
         int round_number
         string round_name
         string status
+        int scoring_system_id FK
         timestamp start_time
+        timestamp end_time
+        boolean pairing_generated
+        timestamp created_at
+    }
+
+    round_pairings {
+        int id PK
+        int tournament_id FK
+        int round_id FK
+        int player1_id FK
+        int player2_id FK
+        int table_number
+        json pairing_algorithm_data
+        timestamp created_at
+        %% UK(round_id, player1_id)
+        %% UK(round_id, player2_id)
     }
 
     matches {
         int id PK
         int tournament_id FK
         int round_id FK
-        int team1_player1_id FK
-        int team1_player2_id FK
-        int team2_player1_id FK
-        int team2_player2_id FK
+        int pairing1_id FK
+        int pairing2_id FK
+        int match_number
+        int table_number
         int referee_id FK
         string status
         timestamp scheduled_time
-        int team1_score
-        int team2_score
-        int winner_team
+        timestamp start_time
+        timestamp end_time
+        int pareja1_points_favor
+        int pareja1_points_contra
+        int pareja2_points_favor
+        int pareja2_points_contra
+        int winner_pairing
+        json games_detail
+        string notes
+        timestamp created_at
+        timestamp updated_at
     }
 
     games {
         int id PK
         int match_id FK
         int game_number
-        int team1_score
-        int team2_score
-        int winner_team
+        int pareja1_score
+        int pareja2_score
+        int winner_pairing
+        int starting_player_id FK
         int duration_minutes
+        json moves
+        string notes
+        timestamp created_at
     }
 
-    %% =================== RANKINGS Y ESTADÍSTICAS ===================
+    tournament_player_stats {
+        int id PK
+        int tournament_id FK
+        int player_id FK
+        int matches_played
+        int matches_won
+        int matches_lost
+        int points_favor
+        int points_against
+        int point_differential
+        decimal win_percentage
+        decimal average_points_favor
+        decimal average_points_against
+        decimal efficiency_ratio
+        decimal consistency_index
+        decimal performance_rating
+        decimal dominance_factor
+        decimal clutch_performance
+        decimal partnership_adaptability
+        decimal closing_ability
+        decimal comeback_ratio
+        decimal tactical_score
+        int current_position
+        int previous_position
+        int final_position
+        timestamp last_updated
+        %% UK(tournament_id, player_id)
+    }
+
     elo_history {
         int id PK
         int player_id FK
+        int tournament_id FK
         int match_id FK
         string rating_type
         int old_rating
         int new_rating
         int rating_change
+        int partner_id FK
         int opponent1_id FK
         int opponent2_id FK
         string result
+        int k_factor
+        decimal endorsement_multiplier
+        timestamp created_at
     }
 
     rankings {
@@ -194,15 +373,72 @@ erDiagram
         string ranking_type
         int player_id FK
         int organization_id FK
+        string country
+        string region
         int current_rating
+        int previous_rating
         int position
-        int games_played
-        int wins
+        int previous_position
+        int tournaments_played
+        int total_matches
+        int total_wins
+        int total_losses
         decimal win_percentage
+        int points_favor
+        int points_against
+        int point_differential
+        timestamp active_since
+        timestamp last_tournament_date
         boolean is_active
+        timestamp created_at
+        timestamp updated_at
+        %% UK(ranking_type, player_id, organization_id, country, region)
     }
 
-    %% =================== PAGOS Y SISTEMA ===================
+    endorsement_requests {
+        int id PK
+        int tournament_id FK
+        int requesting_organization_id FK
+        int requested_by FK
+        int target_organization_id FK
+        string requested_level
+        string justification
+        json supporting_documents
+        string status
+        int reviewed_by FK
+        timestamp review_date
+        string review_comments
+        timestamp created_at
+    }
+
+    public_events {
+        int id PK
+        int tournament_id FK
+        string title
+        string description
+        timestamp event_date
+        time event_time
+        timestamp end_date
+        string venue_name
+        string address
+        string city
+        string country
+        decimal entry_fee
+        decimal prize_amount
+        string prize_description
+        int max_participants
+        json contact_info
+        string registration_url
+        string poster_url
+        int organized_by_user_id FK
+        int organized_by_organization_id FK
+        string category
+        boolean is_active
+        boolean is_featured
+        timestamp created_at
+        timestamp updated_at
+    }
+
     payments {
         int id PK
         int user_id FK
@@ -210,52 +446,115 @@ erDiagram
         int tournament_id FK
         string payment_type
         decimal amount
+        string currency
+        string payment_method
+        string payment_reference
         string status
         timestamp payment_date
+        string invoice_number
+        string notes
+        timestamp created_at
     }
 
     notifications {
         int id PK
         int user_id FK
         string title
-        text message
+        string message
         string type
+        int related_id
         boolean is_read
+        boolean is_sent
+        boolean send_email
+        boolean send_push
         timestamp created_at
+        timestamp read_at
     }
 
     system_config {
         int id PK
         string config_key UK
-        text config_value
+        string config_value
+        string description
         string data_type
+        boolean is_editable
+        timestamp created_at
+        timestamp updated_at
     }
 
     %% =================== RELACIONES ===================
-    
-    %% Usuarios y Licencias
-    users ||--o{ user_licenses : "tiene"
-    license_types ||--o{ user_licenses : "tipo"
-    users ||--o{ active_sessions : "sesiones"
-    
-    %% Organizaciones
-    organization_types ||--o{ organizations : "tipo"
-    organizations ||--o{ organizations : "parent/child"
-    users ||--o{ user_organization_roles : "pertenece"
-    organizations ||--o{ user_organization_roles : "tiene"
-    user_roles ||--o{ user_organization_roles : "rol"
-    users ||--o{ organizations : "verifica"
-    
-    %% Jugadores y Árbitros
-    users ||--|| players : "es"
-    users ||--|| referees : "es"
-    players ||--o{ players : "compañero_preferido"
-    organizations ||--o{ referees : "certifica"
-    
-    %% Torneos
-    organizations ||--o{ tournaments : "organiza"
-    users ||--o{ tournaments : "organizador"
-    game_modes ||--o{ tournaments : "modalidad"
-    tournaments ||--o{ tournament_registrations : "inscripciones"
-    players ||--o{ tournament_registrations : "jugador1"
-    players ||--o{ tournament_registrations : "jugador2"
+
+    %% Users and Auth
+    users ||--o{ user_licenses : "tiene_licencia"
+    license_types ||--o{ user_licenses : "es_tipo_de"
+    users ||--o{ active_sessions : "tiene_sesion_activa"
+    users ||--o{ organizations : "verifico_organizacion" 
+    users ||--o{ user_organization_roles : "tiene_rol_en_organizacion"
+    users ||--|| players : "es_jugador"
+    users ||--|| referees : "es_arbitro"
+    users ||--o{ tournaments : "organizo_torneo"
+    users ||--o{ elo_history : "verifico_aval" 
+    %% endorsed_by en tournaments que afecta elo_history.endorsement_multiplier
+    users ||--o{ endorsement_requests : "solicito_aval"
+    users ||--o{ endorsement_requests : "reviso_aval"
+    users ||--o{ public_events : "organizo_evento"
+    users ||--o{ payments : "realizo_pago"
+    users ||--o{ notifications : "recibe_notificacion"
+
+    %% Organizations
+    organization_types ||--o{ organizations : "es_tipo_de"
+    organizations ||--o{ organizations : "es_padre_de"
+    organizations ||--o{ user_organization_roles : "tiene_miembro_con_rol"
+    organizations ||--o{ referees : "certifico_arbitro"
+    organizations ||--o{ tournaments : "organiza_torneo_entidad"
+    organizations ||--o{ tournaments : "avala_torneo"
+    organizations ||--o{ rankings : "mantiene_ranking"
+    organizations ||--o{ endorsement_requests : "solicita_aval_a"
+    organizations ||--o{ endorsement_requests : "recibe_solicitud_de_aval_de"
+    organizations ||--o{ public_events : "organiza_evento_publico"
+
+    %% Roles
+    user_roles ||--o{ user_organization_roles : "es_rol_de"
+
+    %% Players
+    players ||--o{ players : "es_compañero_preferido_de"
+    players ||--o{ tournament_registrations : "esta_inscrito_en"
+    players ||--o{ round_pairings : "es_jugador1_pareja"
+    players ||--o{ round_pairings : "es_jugador2_pareja"
+    players ||--o{ games : "inicio_juego"
+    players ||--o{ tournament_player_stats : "tiene_estadisticas_en"
+    players ||--o{ elo_history : "tiene_historial_elo"
+    players ||--o{ elo_history : "es_compañero_en_partida_elo"
+    players ||--o{ elo_history : "es_oponente1_en_partida_elo"
+    players ||--o{ elo_history : "es_oponente2_en_partida_elo"
+    players ||--o{ rankings : "esta_en_ranking"
+
+    %% Referees
+    referees ||--o{ matches : "oficia_partida"
+
+    %% Game Modes and Scoring Systems
+    game_modes ||--o{ tournaments : "es_modalidad_de"
+    scoring_systems ||--o{ tournaments : "es_sistema_puntuacion_base_de"
+    scoring_systems ||--o{ tournament_rounds : "es_sistema_puntuacion_de_ronda"
+
+    %% Tournaments
+    tournaments ||--o{ tournament_registrations : "tiene_inscripcion"
+    tournaments ||--o{ tournament_rounds : "tiene_ronda"
+    tournaments ||--o{ round_pairings : "pertenece_a_torneo"
+    tournaments ||--o{ matches : "tiene_partida"
+    tournaments ||--o{ tournament_player_stats : "genera_estadisticas_para"
+    tournaments ||--o{ elo_history : "afecto_elo_en_torneo"
+    tournaments ||--o{ endorsement_requests : "es_objeto_de_solicitud_aval"
+    tournaments ||--o{ public_events : "esta_vinculado_a_evento"
+    tournaments ||--o{ payments : "es_para_torneo"
+
+    %% Rounds, Pairings, Matches, Games
+    tournament_rounds ||--o{ round_pairings : "tiene_parejas_en_ronda"
+    tournament_rounds ||--o{ matches : "tiene_partida_en_ronda"
+    round_pairings ||--o{ matches : "es_pareja1_en_partida"
+    round_pairings ||--o{ matches : "es_pareja2_en_partida"
+    matches ||--o{ games : "contiene_juego"
+    matches ||--o{ elo_history : "genero_cambio_elo_por_partida"
+
+    %% Licenses and Payments
+    user_licenses ||--o{ payments : "es_por_licencia"

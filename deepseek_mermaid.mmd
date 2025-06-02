@@ -1,7 +1,52 @@
 erDiagram
+    user ||--o{ user_profile : "1:1"
+    user ||--o{ organization_member : "1:N"
+    user ||--o{ tournament_participant : "1:N"
+    user ||--o{ elo_history : "1:N"
+    user ||--o{ global_ranking : "1:1"
+    user ||--o{ regional_ranking : "1:N"
+    user ||--o{ license_subscription : "1:N"
+    user ||--o{ active_session : "1:N"
+    user ||--o{ notification : "1:N"
+    user ||--o{ verification_request : "1:N"
+    user ||--|{ game : "player1"
+    user ||--|{ game : "player2"
+    user ||--|{ game : "player3"
+    user ||--|{ game : "player4"
+    user ||--|{ game : "referee"
+    user ||--|{ match_result : "reported_by"
+    user ||--|{ match_result : "verified_by"
+    user ||--|{ tournament : "created_by"
+    user ||--|{ organization : "created_by"
+
+    organization ||--o{ organization : "parent"
+    organization ||--o{ organization_member : "1:N"
+    organization ||--o{ tournament : "1:N"
+    organization ||--o{ license_subscription : "1:N"
+    organization ||--o{ verification_request : "1:N"
+    organization ||--|{ tournament_approval_request : "requesting"
+    organization ||--|{ tournament_approval_request : "approving"
+    organization ||--|{ tournament : "approved_by"
+
+    game_mode ||--o{ tournament : "1:N"
+
+    tournament ||--o{ tournament_participant : "1:N"
+    tournament ||--o{ tournament_round : "1:N"
+    tournament ||--o{ tournament_ranking : "1:N"
+    tournament ||--o{ elo_history : "1:N"
+    tournament ||--|{ tournament_approval_request : "1:1"
+
+    tournament_round ||--o{ game : "1:N"
+
+    game ||--o{ match_result : "1:1"
+    game ||--o{ elo_history : "1:N"
+
+    license_feature ||--o{ license_subscription : "type"
+
     user {
         UUID id PK
         VARCHAR email
+        VARCHAR password_hash
         VARCHAR verification_status
         VARCHAR verification_document_url
         VARCHAR verification_social_url
@@ -9,6 +54,8 @@ erDiagram
         VARCHAR license_type
         TIMESTAMP license_expires_at
         VARCHAR current_session_id
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
     user_profile {
@@ -23,6 +70,17 @@ erDiagram
         TEXT bio
         TIMESTAMP created_at
         TIMESTAMP updated_at
+    }
+
+    game_mode {
+        UUID id PK
+        VARCHAR name
+        TEXT description
+        INT min_players
+        INT max_players
+        BOOLEAN is_team_mode
+        JSONB rules
+        TIMESTAMP created_at
     }
 
     organization {
@@ -53,6 +111,7 @@ erDiagram
     tournament {
         UUID id PK
         UUID organization_id FK
+        UUID game_mode_id FK
         VARCHAR name
         TEXT description
         VARCHAR tournament_type
@@ -60,8 +119,16 @@ erDiagram
         TIMESTAMP end_date
         VARCHAR location
         BOOLEAN is_official
+        BOOLEAN is_official_approved
+        UUID approved_by_organization_id FK
         VARCHAR status
+        INT points_per_round
+        BOOLEAN is_cycles_mode
+        INT rounds_planned
         JSONB ruleset
+        DECIMAL entry_fee
+        DECIMAL prize_pool
+        BOOLEAN public_calendar
         UUID created_by FK
         TIMESTAMP created_at
         TIMESTAMP updated_at
@@ -77,30 +144,62 @@ erDiagram
         TIMESTAMP created_at
     }
 
-    tournament_match {
+    tournament_round {
         UUID id PK
         UUID tournament_id FK
         INT round_number
-        INT table_number
+        VARCHAR status
         TIMESTAMP start_time
         TIMESTAMP end_time
+        TIMESTAMP created_at
+    }
+
+    game {
+        UUID id PK
+        UUID round_id FK
+        INT table_number
+        UUID player1_id FK
+        UUID player2_id FK
+        UUID player3_id FK
+        UUID player4_id FK
+        INT team1_score
+        INT team2_score
         VARCHAR status
+        TIMESTAMP start_time
+        TIMESTAMP end_time
         UUID referee_id FK
         TIMESTAMP created_at
     }
 
     match_result {
-        UUID match_id PK,FK
-        UUID participant1_user_id FK
-        UUID participant2_user_id FK
-        INT participant1_score
-        INT participant2_score
-        UUID winner_user_id FK
+        UUID game_id PK,FK
+        UUID team1_player1_id FK
+        UUID team1_player2_id FK
+        UUID team2_player1_id FK
+        UUID team2_player2_id FK
+        INT team1_score
+        INT team2_score
         BOOLEAN is_draw
         UUID reported_by FK
         UUID verified_by FK
         VARCHAR verification_status
         TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    tournament_ranking {
+        UUID tournament_id PK,FK
+        UUID user_id PK,FK
+        INT position
+        INT matches_played
+        INT matches_won
+        INT matches_lost
+        INT matches_drawn
+        INT total_points_for
+        INT total_points_against
+        DECIMAL performance_rating
+        DECIMAL average_opponent_rating
+        INT last_round_played
         TIMESTAMP updated_at
     }
 
@@ -111,11 +210,36 @@ erDiagram
         INT old_rating
         INT new_rating
         INT change
-        UUID match_id FK
+        UUID game_id FK
         UUID tournament_id FK
         VARCHAR change_reason
         UUID changed_by FK
         TIMESTAMP created_at
+    }
+
+    global_ranking {
+        UUID user_id PK,FK
+        INT elo_rating
+        INT open_elo_rating
+        INT tournaments_played
+        INT tournaments_won
+        INT matches_played
+        INT matches_won
+        INT matches_lost
+        INT matches_drawn
+        INT total_points_for
+        INT total_points_against
+        DECIMAL performance_rating
+        TIMESTAMP last_tournament_date
+        TIMESTAMP updated_at
+    }
+
+    regional_ranking {
+        UUID user_id PK,FK
+        VARCHAR region_code PK
+        INT elo_rating
+        INT position
+        TIMESTAMP updated_at
     }
 
     license_subscription {
@@ -134,16 +258,6 @@ erDiagram
         TIMESTAMP updated_at
     }
 
-    active_session {
-        UUID id PK
-        UUID user_id FK
-        VARCHAR session_token
-        VARCHAR ip_address
-        TEXT user_agent
-        TIMESTAMP created_at
-        TIMESTAMP expires_at
-    }
-
     license_feature {
         VARCHAR license_type PK
         INT max_organizations
@@ -154,6 +268,16 @@ erDiagram
         BOOLEAN allow_multiple_sessions
         BOOLEAN can_create_official_tournaments
         BOOLEAN can_verify_players
+    }
+
+    active_session {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR session_token
+        VARCHAR ip_address
+        TEXT user_agent
+        TIMESTAMP created_at
+        TIMESTAMP expires_at
     }
 
     notification {
@@ -182,33 +306,14 @@ erDiagram
         TIMESTAMP updated_at
     }
 
-    user ||--o{ user_profile : "1:1"
-    user ||--o{ organization_member : "1:N"
-    user ||--o{ tournament_participant : "1:N"
-    user ||--o{ tournament : "created_by"
-    user ||--o{ tournament_match : "referee"
-    user ||--o{ match_result : "participant1"
-    user ||--o{ match_result : "participant2"
-    user ||--o{ match_result : "winner"
-    user ||--o{ match_result : "reported_by"
-    user ||--o{ match_result : "verified_by"
-    user ||--o{ elo_history : "1:N"
-    user ||--o{ license_subscription : "1:N"
-    user ||--o{ active_session : "1:N"
-    user ||--o{ notification : "1:N"
-    user ||--o{ verification_request : "1:N"
-    
-    organization ||--o{ organization : "parent_organization"
-    organization ||--o{ organization_member : "1:N"
-    organization ||--o{ tournament : "1:N"
-    organization ||--o{ license_subscription : "1:N"
-    organization ||--o{ verification_request : "1:N"
-    
-    tournament ||--o{ tournament_participant : "1:N"
-    tournament ||--o{ tournament_match : "1:N"
-    tournament ||--o{ elo_history : "1:N"
-    
-    tournament_match ||--|| match_result : "1:1"
-    tournament_match ||--o{ elo_history : "1:N"
-    
-    license_feature ||--o{ license_subscription : "license_type"
+    tournament_approval_request {
+        UUID id PK
+        UUID tournament_id FK
+        UUID requesting_organization_id FK
+        UUID approving_organization_id FK
+        VARCHAR status
+        TIMESTAMP requested_at
+        TIMESTAMP decided_at
+        UUID decided_by FK
+        TEXT notes
+    }

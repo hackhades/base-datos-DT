@@ -1,149 +1,183 @@
-erDiagram  
-    federaciones {  
-        int id PK  
-        text nombre  
-        text pais  
-        text estado  
-        boolean aprobado  
-        timestamptz fecha_registro  
-        boolean verificado  
-        jsonb social_verification  
-        jsonb documentos_verificacion  
-    }  
-  
-    asociaciones {  
-        int id PK  
-        int federacion_id FK  
-        text nombre  
-        text pais  
-        text estado  
-        boolean aprobado  
-        timestamptz fecha_registro  
-        boolean verificado  
-        jsonb social_verification  
-        jsonb documentos_verificacion  
-    }  
-  
-    clubes {  
-        int id PK  
-        int asociacion_id FK  
-        text nombre  
-        text pais  
-        text estado  
-        boolean aprobado  
-        boolean verificado  
-        timestamptz fecha_registro  
-        jsonb social_verification  
-        jsonb documentos_verificacion  
-    }  
-  
-    moderadores {  
-        int id PK  
-        int federacion_id FK  
-        int asociacion_id FK  
-        int club_id FK  
-        text nombre  
-        text email  
-        boolean verificado  
-        jsonb social_verification  
-        jsonb documentos_verificacion  
-        timestamptz fecha_registro  
-    }  
-  
-    usuarios {  
-        int id PK  
-        text nombre  
-        text email  
-        text password_hash  
-        text rol  
-        text tipo_licencia  
-        boolean estado_sesion  
-        text ip_registro  
-        text navegador  
-        timestamptz fecha_registro  
-        boolean verificado  
-        text afiliacion_tipo  
-        int afiliacion_id  
-        boolean licencia_activa  
-    }  
-  
-    licencias {  
-        int id PK  
-        int usuario_id FK  
-        text tipo  
-        text modalidad  
-        timestamptz fecha_inicio  
-        timestamptz fecha_fin  
-        boolean pago_mensual  
-        text estado  
-        decimal costo  
-    }  
-  
-    sesiones {  
-        int id PK  
-        int usuario_id FK  
-        text ip  
-        text navegador  
-        timestamptz fecha_inicio  
-        timestamptz fecha_cierre  
-        boolean sesion_activa  
-    }  
-  
-    rankings {  
-        int id PK  
-        text nombre  
-        text tipo  
-        text categoria  
-        timestamptz fecha_creacion  
-        text descripcion  
-    }  
-  
-    resultados {  
-        int id PK  
-        int torneo_id FK  
-        int jugador_id FK  
-        text resultado  
-        timestamptz fecha  
-    }  
-  
-    torneos {  
-        int id PK  
-        text nombre  
-        text modalidad  
-        timestamptz fecha_inicio  
-        timestamptz fecha_fin  
-        text sistema  
-        int ranking_id FK  
-        text estado  
-    }  
-  
-    ventas_licencias {  
-        int id PK  
-        int licencia_id FK  
-        int comprador_id FK  
-        timestamptz fecha_compra  
-        decimal monto  
-        text periodo  
-    }  
-  
-    pagos {  
-        int id PK  
-        int usuario_id FK  
-        decimal monto  
-        timestamptz fecha_pago  
-        text metodo_pago  
-        text estado  
-    }  
-  
-    %% Relaciones  
-    federaciones ||--o{ asociaciones : "tiene"  
-    asociaciones ||--o{ clubes : "tiene"  
-    federaciones ||--o{ moderadores : "tiene"  
-    asociaciones ||--o{ moderadores : "tiene"  
-    clubes ||--o{ moderadores : "tiene"  
-    usuarios ||--o{ licencias : "tiene"  
-    usuarios ||--o{ sesiones : "tiene"  
-    rankings ||--o{ torneos : "tiene"  
-    torneos ||--o{ resultados : "tiene"  
-    usuarios ||--o{ ventas_licencias : "compra"  
-    usuarios ||--o{ pagos : "realiza"  
+erDiagram
+    modalidades {
+        int id PK
+        string nombre UK
+    }
+
+    federaciones {
+        int id PK
+        string nombre
+        string pais
+        string estado
+        boolean aprobado
+        timestamp fecha_registro
+        boolean verificado
+        json social_verification
+        json documentos_verificacion
+    }
+
+    asociaciones {
+        int id PK
+        int federacion_id FK
+        string nombre
+        string pais
+        string estado
+        boolean aprobado
+        timestamp fecha_registro
+        boolean verificado
+        json social_verification
+        json documentos_verificacion
+    }
+
+    clubes {
+        int id PK
+        int asociacion_id FK
+        string nombre
+        string pais
+        string estado
+        boolean aprobado
+        boolean verificado
+        timestamp fecha_registro
+        json social_verification
+        json documentos_verificacion
+    }
+
+    usuarios {
+        int id PK
+        string nombre
+        string email UK
+        string password_hash
+        string rol
+        string tipo_licencia
+        boolean estado_sesion
+        string ip_registro
+        string navegador
+        timestamp fecha_registro
+        boolean verificado
+        string afiliacion_tipo
+        int afiliacion_id "FK polimórfica a federaciones, asociaciones o clubes"
+        boolean licencia_activa
+    }
+
+    licencias {
+        int id PK
+        int usuario_id FK
+        string tipo
+        timestamp fecha_inicio
+        timestamp fecha_vencimiento
+        int cantidad_torneos_organizados
+        json permisos
+    }
+
+    torneos {
+        int id PK
+        string nombre
+        int organizador_id FK
+        int modalidad_id FK
+        int numero_rondas
+        timestamp fecha_inicio
+        timestamp fecha_fin
+        string descripcion
+        string estado
+    }
+
+    rondas {
+        int id PK
+        int torneo_id FK
+        int numero_ronda
+        string tipo_ciclo
+        int cantidad_puntos
+        timestamp fecha
+    }
+
+    partidas {
+        int id PK
+        int ronda_id FK
+        int pareja1_id FK
+        int pareja2_id FK
+        int puntos_favor
+        int puntos_contra
+        string resultado
+        timestamp fecha
+    }
+
+    clasificacion {
+        int id PK
+        int torneo_id FK
+        int jugador_id FK
+        int posicion
+        int puntos
+        json estadisticas
+    }
+
+    clasificacion_universal {
+        int id PK
+        int jugador_id FK
+        decimal elo
+        string region
+        string pais
+        timestamp fecha_actualizacion
+    }
+
+    avales {
+        int id PK
+        int torneo_id FK
+        int instancia_superior_id FK "Refiere a federaciones (o asociaciones)"
+        string estado
+        timestamp fecha_solicitud
+        timestamp fecha_aprobacion
+    }
+
+    eventos {
+        int id PK
+        int organizador_id FK
+        string nombre
+        string descripcion
+        timestamp fecha
+        time hora
+        decimal costo
+        decimal premio
+        string ubicacion
+        string tipo
+    }
+
+    %% =================== RELACIONES ===================
+    federaciones ||--o{ asociaciones : "tiene"
+    asociaciones ||--o{ clubes : "tiene"
+    
+    usuarios ||--o{ licencias : "posee"
+    
+    usuarios ||--o{ torneos : "organiza"
+    modalidades ||--o{ torneos : "usa_modalidad"
+    
+    torneos ||--o{ rondas : "tiene_rondas"
+    rondas ||--o{ partidas : "contiene_partidas"
+    
+    usuarios ||--o{ partidas : "es_pareja1"
+    usuarios ||--o{ partidas : "es_pareja2"
+    
+    torneos ||--o{ clasificacion : "genera_clasificacion_torneo"
+    usuarios ||--o{ clasificacion : "participa_en_clasificacion"
+    
+    usuarios }|--|| clasificacion_universal : "tiene_clasificacion_universal"
+    %% Suponiendo 1-a-1 o 1-a-0
+    
+    torneos ||--o{ avales : "solicita_aval"
+    federaciones ||--o{ avales : "otorga_aval"
+    %% Aval principal a federacion segun FK
+    
+    %% Para avales.instancia_superior_id referenciando asociaciones, seria una linea conceptual:
+    %% asociaciones ||--o{ avales : "otorga_aval_conceptual"
+
+    usuarios ||--o{ eventos : "organiza_evento"
+
+    %% Relaciones polimórficas (representadas conceptualmente o con comentarios)
+    %% La columna usuarios.afiliacion_id puede referenciar a federaciones, asociaciones o clubes.
+    %% La columna avales.instancia_superior_id actualmente referencia a federaciones,
+    %% pero el comentario SQL original indicaba que podría ser federacion o asociacion.
+    %% Para representar esto visualmente de forma más clara si fuera necesario,
+    %% se podrían usar relaciones punteadas conceptuales, por ejemplo:
+    %% usuarios }o..|| federaciones : "afiliado_a (si tipo es federacion)"
+    %% usuarios }o..|| asociaciones : "afiliado_a (si tipo es asociacion)"
+    %% usuarios }o..|| clubes : "afiliado_a (si tipo es club)"
+    %% avales }o..|| asociaciones : "otorga_aval (si instancia es asociacion)"

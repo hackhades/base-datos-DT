@@ -1,260 +1,359 @@
 erDiagram
+
     users {
-        int id PK
-        string email
-        string password_hash
-        string first_name
-        string last_name
-        date date_of_birth
-        string fid_id
-        string profile_picture_url
-        int official_elo
-        int open_elo
-        bool is_verified_identity
-        datetime created_at
-        datetime updated_at
+        INT id PK
+        VARCHAR email_unique
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        DATE date_of_birth
+        CHAR(2) country_code
+        VARCHAR fid_id_unique
+        TEXT profile_picture_url
+        INT elo_official
+        INT elo_open
+        BOOLEAN is_verified_identity
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
     }
 
     sessions {
-        string id PK
-        int user_id FK
-        datetime expires_at
-        string ip_address
-        string user_agent
-        datetime created_at
+        UUID id PK
+        INT user_id FK
+        TIMESTAMPTZ expires_at
+        VARCHAR ip_address
+        TEXT user_agent
+        TIMESTAMPTZ created_at
     }
 
     roles {
-        int id PK
-        string name
-        string description
+        INT id PK
+        VARCHAR name_unique
+        TEXT description
     }
 
     user_roles {
-        int user_id FK
-        int role_id FK
+        INT user_id PK, FK
+        INT role_id PK, FK
     }
 
     organizations {
-        int id PK
-        string name
-        string type
-        int parent_organization_id FK
-        string country_code
-        string region_or_state
-        string city
-        string address
-        string contact_email
-        string contact_phone
-        string website_url
-        string logo_url
-        date founded_date
-        string description_org
-        bool is_officially_verified
-        int verified_by_organization_id FK
-        int verified_by_user_id FK
-        datetime verification_date
-        string verification_document_url
-        string social_media_link_for_verification
-        datetime created_at_org
-        datetime updated_at_org
+        INT id PK
+        VARCHAR name
+        organization_type_enum type
+        INT parent_organization_id FK "Nullable"
+        CHAR(2) country_code
+        VARCHAR region_or_state
+        VARCHAR city
+        TEXT address
+        VARCHAR contact_email
+        VARCHAR contact_phone
+        TEXT website_url
+        TEXT logo_url
+        DATE founded_date
+        TEXT description
+        BOOLEAN is_officially_verified
+        INT verified_by_organization_id FK "Nullable"
+        INT verified_by_user_id FK "Nullable"
+        TIMESTAMPTZ verification_date
+        TEXT verification_document_url
+        TEXT social_media_link_for_verification
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+        VARCHAR unique_name_type_parent "UNIQUE (name, type, parent_organization_id)"
     }
 
     organization_verification_requests {
-        int id PK
-        int requesting_organization_id FK
-        int approving_organization_id FK
-        string status
-        int submitted_by_user_id FK
-        int reviewed_by_user_id FK
-        string submission_notes
-        string review_notes
-        datetime submitted_at
-        datetime reviewed_at
+        INT id PK
+        INT requesting_organization_id FK
+        INT approving_organization_id FK "Nullable"
+        verification_status_enum status
+        INT submitted_by_user_id FK
+        INT reviewed_by_user_id FK "Nullable"
+        TEXT submission_notes
+        TEXT review_notes
+        TIMESTAMPTZ submitted_at
+        TIMESTAMPTZ reviewed_at
     }
 
     organization_staff {
-        int user_id FK
-        int organization_id FK
-        string role_in_organization
-        bool is_primary_contact
-        bool can_manage_licenses
-        bool can_manage_tournaments
-        bool can_approve_children
-        datetime added_at
+        INT user_id PK, FK
+        INT organization_id PK, FK
+        VARCHAR role_in_organization
+        BOOLEAN is_primary_contact
+        BOOLEAN can_manage_licenses
+        BOOLEAN can_manage_tournaments
+        BOOLEAN can_manage_endorsements
+        BOOLEAN can_approve_children_orgs
+        TIMESTAMPTZ added_at
     }
 
     license_types {
-        int id PK
-        string name
-        string description_lt
-        decimal price_monthly
-        decimal price_annual
-        string features
-        int max_concurrent_sessions
-        bool is_available
+        INT id PK
+        VARCHAR name_unique
+        TEXT description
+        NUMERIC price_monthly
+        NUMERIC price_annual
+        JSONB features
+        INT max_concurrent_sessions
+        BOOLEAN is_available
     }
 
     licenses {
-        int id PK
-        int license_type_id FK
-        int user_id FK
-        int organization_id FK
-        datetime start_date
-        datetime end_date
-        string payment_interval
-        string status_lic
-        bool auto_renew
-        string transaction_id
-        datetime created_at_lic
-        datetime updated_at_lic
+        INT id PK
+        INT license_type_id FK
+        INT user_id FK "Nullable (chk_license_owner)"
+        INT organization_id FK "Nullable (chk_license_owner)"
+        TIMESTAMPTZ start_date
+        TIMESTAMPTZ end_date
+        payment_interval_enum payment_interval
+        license_status_enum status
+        BOOLEAN auto_renew
+        VARCHAR transaction_id
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
     }
 
-    elo_history {
-        int id PK
-        int user_id FK
-        int game_id FK
-        int previous_official_elo
-        int new_official_elo
-        int previous_open_elo
-        int new_open_elo
-        datetime change_date
-        string reason
+    tournament_modalities {
+        INT id PK
+        VARCHAR name_unique
+        TEXT description
+        BOOLEAN requires_pairing_algorithm
+        INT min_players_per_game
+        INT max_players_per_game
     }
 
     tournaments {
-        int id PK
-        string name
-        int organizer_organization_id FK
-        int organizer_user_id FK
-        string modality
-        datetime start_datetime
-        datetime end_datetime
-        string location_venue_name
-        string location_address
-        string location_city
-        string location_country_code
-        bool is_official
-        string status_tnmt
-        int max_participants
-        datetime registration_deadline
-        decimal entry_fee
-        string rules_details
-        string prize_details
-        string banner_image_url
-        int created_by_user_id FK
-        datetime created_at_tnmt
-        datetime updated_at_tnmt
+        INT id PK
+        VARCHAR name
+        INT organizer_organization_id FK "Nullable (chk_tournament_organizer)"
+        INT organizer_user_id FK "Nullable (chk_tournament_organizer)"
+        INT tournament_modality_id FK
+        TIMESTAMPTZ start_datetime
+        TIMESTAMPTZ end_datetime
+        VARCHAR location_venue_name
+        TEXT location_address
+        VARCHAR location_city
+        CHAR(2) location_country_code
+        tournament_status_enum status
+        INT max_participants
+        INT min_rounds
+        INT max_rounds
+        TIMESTAMPTZ registration_deadline
+        NUMERIC entry_fee
+        TEXT rules_details
+        TEXT prize_details
+        TEXT banner_image_url
+        INT created_by_user_id FK
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    tournament_endorsements {
+        INT id PK
+        INT tournament_id FK
+        INT requesting_organization_id FK
+        INT endorsing_organization_id FK
+        endorsement_status_enum status
+        INT requested_by_user_id FK
+        INT reviewed_by_user_id FK "Nullable"
+        TEXT request_notes
+        TEXT review_notes
+        TIMESTAMPTZ requested_at
+        TIMESTAMPTZ reviewed_at
+        elo_impact_level_enum elo_impact
+        VARCHAR unique_tournament_endorsing_org "UNIQUE (tournament_id, endorsing_organization_id)"
     }
 
     tournament_participants {
-        int id PK
-        int tournament_id FK
-        int user_id FK
-        datetime registration_datetime
-        int initial_rating_official
-        int initial_rating_open
-        int final_ranking_position
-        decimal points_achieved
-        decimal tie_break_score1
-        decimal tie_break_score2
-        bool is_confirmed
-        string payment_status
+        INT id PK
+        INT tournament_id FK
+        INT user_id FK
+        TIMESTAMPTZ registration_datetime
+        INT initial_elo_official
+        INT initial_elo_open
+        INT final_ranking_position
+        NUMERIC total_points_achieved
+        INT stat_games_played
+        INT stat_games_won
+        INT stat_games_lost
+        INT stat_games_drawn
+        INT stat_points_for
+        INT stat_points_against
+        NUMERIC stat_positive_differential
+        NUMERIC stat_effectiveness_rating
+        INT stat_sum_elo_opponents
+        NUMERIC stat_average_elo_opponents
+        NUMERIC stat_buchholz_total
+        NUMERIC stat_buchholz_median
+        NUMERIC stat_sonneborn_berger
+        BOOLEAN is_confirmed
+        VARCHAR payment_status
+        TEXT notes
+        VARCHAR unique_tournament_user "UNIQUE (tournament_id, user_id)"
     }
 
     tournament_arbiters {
-        int tournament_id FK
-        int user_id FK
-        string role_in_tournament
+        INT tournament_id PK, FK
+        INT user_id PK, FK
+        VARCHAR role_in_tournament
     }
 
     tournament_rounds {
-        int id PK
-        int tournament_id FK
-        int round_number
-        datetime start_datetime_rnd
-        bool is_completed
-        datetime pairing_generated_at
+        INT id PK
+        INT tournament_id FK
+        INT round_number
+        TIMESTAMPTZ start_datetime
+        BOOLEAN is_completed
+        TIMESTAMPTZ pairing_generated_at
+        round_scoring_type_enum scoring_type
+        INT target_score_or_cycles
+        TEXT notes
+        VARCHAR unique_tournament_round "UNIQUE (tournament_id, round_number)"
     }
 
     game_results {
-        int id PK
-        int tournament_id FK
-        int round_id FK
-        int player_white_id FK
-        int player_black_id FK
-        string result
-        string pgn_moves
-        datetime game_datetime
-        int board_number
-        int reported_by_user_id FK
-        int verified_by_arbiter_id FK
-        datetime report_datetime
-        datetime verification_datetime
-        int elo_change_white_official
-        int elo_change_black_official
-        int elo_change_white_open
-        int elo_change_black_open
-        bool affects_official_elo
-        bool affects_open_elo
-        datetime created_at_gr
-        datetime updated_at_gr
+        INT id PK
+        INT tournament_id FK
+        INT round_id FK "Nullable"
+        INT team1_player1_id FK "Nullable"
+        INT team1_player2_id FK "Nullable"
+        INT team2_player1_id FK "Nullable"
+        INT team2_player2_id FK "Nullable"
+        INT team1_score
+        INT team2_score
+        game_outcome_enum outcome
+        TEXT game_log
+        TIMESTAMPTZ game_datetime
+        INT board_number
+        INT reported_by_user_id FK "Nullable"
+        INT verified_by_arbiter_id FK "Nullable"
+        TIMESTAMPTZ report_datetime
+        TIMESTAMPTZ verification_datetime
+        elo_impact_level_enum elo_impact_level
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    game_player_elo_changes {
+        INT id PK
+        INT game_id FK
+        INT user_id FK
+        INT previous_elo_official
+        INT new_elo_official
+        INT change_official
+        INT previous_elo_open
+        INT new_elo_open
+        INT change_open
+        VARCHAR unique_game_user "UNIQUE (game_id, user_id)"
+    }
+
+    elo_history {
+        INT id PK
+        INT user_id FK
+        INT game_id FK "Nullable"
+        VARCHAR elo_type
+        INT previous_elo
+        INT new_elo
+        INT change_amount
+        TIMESTAMPTZ change_date
+        TEXT reason
     }
 
     published_rankings {
-        int id PK
-        string name
-        string category
-        int organization_id FK
-        date effective_date
-        int published_by_user_id FK
-        datetime publication_datetime
-        string description_pr
-        bool is_active
-        datetime created_at_pr
+        INT id PK
+        VARCHAR name
+        ranking_category_enum category
+        INT organization_id FK "Nullable"
+        CHAR(2) country_code_filter
+        VARCHAR region_filter
+        DATE effective_date
+        INT published_by_user_id FK
+        TIMESTAMPTZ publication_datetime
+        TEXT description
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        VARCHAR unique_category_org_date "UNIQUE (category, organization_id, effective_date)"
     }
 
     ranking_entries {
-        int id PK
-        int published_ranking_id FK
-        int user_id FK
-        int rank_position
-        int elo_at_publication
-        int games_played_in_period
+        INT id PK
+        INT published_ranking_id FK
+        INT user_id FK
+        INT rank_position
+        INT elo_at_publication
+        INT games_played_in_period
+        VARCHAR unique_pub_ranking_user "UNIQUE (published_ranking_id, user_id)"
+        VARCHAR unique_pub_ranking_pos "UNIQUE (published_ranking_id, rank_position)"
     }
 
-    users ||--o{ sessions : ""
-    users ||--o{ user_roles : ""
-    roles ||--o{ user_roles : ""
-    organizations }o--o| organizations : ""
-    organizations }o--o| organizations : ""
-    users  o|--o{ organizations : ""
-    organizations ||--o{ organization_verification_requests : ""
-    organizations  o|--o{ organization_verification_requests : ""
-    users ||--o{ organization_verification_requests : ""
-    users  o|--o{ organization_verification_requests : ""
-    users ||--o{ organization_staff : ""
-    organizations ||--o{ organization_staff : ""
-    license_types ||--o{ licenses : ""
-    users  o|--o{ licenses : ""
-    organizations  o|--o{ licenses : ""
-    users ||--o{ elo_history : ""
-    game_results  o|--o{ elo_history : ""
-    organizations  o|--o{ tournaments : ""
-    users  o|--o{ tournaments : ""
-    users ||--o{ tournaments : ""
-    tournaments ||--o{ tournament_participants : ""
-    users ||--o{ tournament_participants : ""
-    tournaments ||--o{ tournament_arbiters : ""
-    users ||--o{ tournament_arbiters : ""
-    tournaments ||--o{ tournament_rounds : ""
-    tournaments ||--o{ game_results : ""
-    tournament_rounds  o|--o{ game_results : ""
-    users  o|--o{ game_results : ""
-    users  o|--o{ game_results : ""
-    users  o|--o{ game_results : ""
-    users  o|--o{ game_results : ""
-    organizations  o|--o{ published_rankings : ""
-    users ||--o{ published_rankings : ""
-    published_rankings ||--o{ ranking_entries : ""
-    users ||--o{ ranking_entries : ""
+    published_events {
+        INT id PK
+        VARCHAR title
+        TEXT description
+        TIMESTAMPTZ event_start_datetime
+        TIMESTAMPTZ event_end_datetime
+        TEXT location_details
+        NUMERIC cost_per_participant
+        TEXT prize_information
+        INT organizer_user_id FK "Nullable (chk_event_organizer)"
+        INT organizer_organization_id FK "Nullable (chk_event_organizer)"
+        TEXT contact_info
+        TEXT event_website_url
+        TEXT banner_image_url
+        INT published_by_user_id FK
+        TIMESTAMPTZ published_at
+        BOOLEAN is_public
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    %% Relationships
+    users ||--o{ sessions : "has"
+    users ||--o{ user_roles : "has"
+    roles ||--o{ user_roles : "defines"
+    users ||--o{ organization_staff : "is_staff_for"
+    organizations ||--o{ organization_staff : "has_staff"
+    users ||--o{ licenses : "owns_personal_license"
+    organizations ||--o{ licenses : "owns_organizational_license"
+    license_types ||--o{ licenses : "defines_type_for"
+    users ||--o{ tournaments : "created_by"
+    users ||--o{ tournaments : "organized_by_user"
+    organizations ||--o{ tournaments : "organized_by_org"
+    tournament_modalities ||--o{ tournaments : "uses_modality"
+    users ||--o{ tournament_participants : "participates_as"
+    tournaments ||--o{ tournament_participants : "has_participant"
+    users ||--o{ tournament_arbiters : "arbitrates_as"
+    tournaments ||--o{ tournament_arbiters : "has_arbiter"
+    tournaments ||--o{ tournament_rounds : "has_round"
+    tournaments ||--o{ game_results : "contains_game"
+    tournament_rounds ||--o{ game_results : "contains_game_of_round"
+    users ||--o{ game_results : "is_team1_player1"
+    users ||--o{ game_results : "is_team1_player2"
+    users ||--o{ game_results : "is_team2_player1"
+    users ||--o{ game_results : "is_team2_player2"
+    users ||--o{ game_results : "reported_by"
+    users ||--o{ game_results : "verified_by_arbiter"
+    game_results ||--o{ game_player_elo_changes : "results_in_change_for"
+    users ||--o{ game_player_elo_changes : "undergoes_change"
+    users ||--o{ elo_history : "has_history_for"
+    game_results ||--o| elo_history : "causes_entry"
+    users ||--o{ published_rankings : "published_by"
+    organizations ||--o| published_rankings : "for_organization"
+    published_rankings ||--o{ ranking_entries : "contains_entry"
+    users ||--o{ ranking_entries : "is_entry_for"
+    users ||--o{ organization_verification_requests : "submitted_by"
+    users ||--o| organization_verification_requests : "reviewed_by"
+    organizations ||--o{ organization_verification_requests : "requesting_org"
+    organizations ||--o| organization_verification_requests : "approving_org"
+    organizations ||--o| organizations : "parent_of"
+    organizations ||--o| organizations : "verified_by_org"
+    users ||--o| organizations : "verified_by_user"
+    users ||--o{ published_events : "publishes_event"
+    organizations ||--o{ published_events : "publishes_event_as_org"
+    users ||--o{ published_events : "created_by_entry"
+    tournaments ||--o{ tournament_endorsements : "requests_endorsement"
+    organizations ||--o{ tournament_endorsements : "is_requesting_org"
+    organizations ||--o{ tournament_endorsements : "is_endorsing_org"
+    users ||--o{ tournament_endorsements : "requested_by_staff"
+    users ||--o| tournament_endorsements : "reviewed_by_staff"
